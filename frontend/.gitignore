@@ -3,3 +3,6 @@ node_modules/
 out/
 *.tsbuildinfo
 .env*
+
+# .gitignore gốc (mẫu Python) có "lib/" — không được nuốt frontend/src/lib
+!lib/
