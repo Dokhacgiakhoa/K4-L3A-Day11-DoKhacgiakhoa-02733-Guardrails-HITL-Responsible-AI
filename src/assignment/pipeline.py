@@ -156,7 +156,44 @@ _REFUSAL_CASES = [
      "Thông tin như mật khẩu, khóa API hay địa chỉ máy chủ nội bộ là dữ liệu bảo mật, mình không "
      "chia sẻ được.",
      "Passwords, API keys and internal server addresses are confidential, so I can't share them."),
+    # --- ngoài chủ đề (topic filter chặn)
+    (r"\b(?:hack|exploit|weapon|bomb|drug|kill|steal|vu khi|bom|ma tuy|trom|lua dao)\b",
+     "Yêu cầu này liên quan đến hành vi nguy hiểm hoặc trái pháp luật nên mình không hỗ trợ được. "
+     "Nếu bạn lo tài khoản của mình bị xâm nhập, mình có thể hướng dẫn cách khóa thẻ hoặc đổi mật khẩu "
+     "internet banking.",
+     "That involves something harmful or illegal, so I can't help with it. If you're worried your "
+     "account has been compromised, I can walk you through locking your card or changing your password."),
+    (r"nau|mon an|cong thuc|recipe|cook|banh|pho|an gi|food|nha hang|restaurant",
+     "Món ngon thì mình chịu thua rồi, mình chỉ là trợ lý ngân hàng thôi. Nhưng nếu bạn hay thanh toán "
+     "ăn uống bằng thẻ, mình có thể giới thiệu các ưu đãi hoàn tiền khi quẹt thẻ.",
+     "Cooking isn't my strong suit, I'm just the bank's assistant. If you often pay for meals by card, "
+     "though, I can tell you about our cashback offers."),
+    (r"du lich|travel|ve may bay|flight|khach san|hotel|visa",
+     "Mình không đặt được chuyến đi, nhưng nếu bạn sắp đi nước ngoài, mình có thể tư vấn thẻ thanh toán "
+     "quốc tế, phí chuyển đổi ngoại tệ hoặc cách mở chi tiêu nước ngoài cho thẻ.",
+     "I can't book trips, but if you're travelling abroad I can help with international card payments, "
+     "foreign-exchange fees or enabling overseas spending on your card."),
+    (r"thoi tiet|weather|troi mua|co mua|mua khong|nang nong|nhiet do|temperature|du bao",
+     "Thời tiết thì bạn xem ứng dụng dự báo sẽ chính xác hơn mình nhiều. Mình chỉ hỗ trợ các dịch vụ "
+     "ngân hàng thôi.",
+     "A weather app will do much better than me there, I only handle banking services."),
+    (r"bong da|da bong|tran dau|the thao|football|soccer|sport|game|phim|movie|nhac|music|ca si|singer",
+     "Chuyện giải trí thì mình không theo kịp đâu, mình chỉ lo phần ngân hàng thôi.",
+     "Entertainment isn't my area, I only look after banking."),
+    (r"benh|thuoc|bac si|suc khoe|doctor|medicine|health|dau dau|sot",
+     "Vấn đề sức khỏe bạn nên hỏi bác sĩ hoặc dược sĩ để được tư vấn chính xác. Mình chỉ hỗ trợ dịch vụ "
+     "ngân hàng.",
+     "For health questions please check with a doctor or pharmacist. I can only help with banking."),
+    (r"code|lap trinh|python|javascript|bai tap|homework|giai toan|math|essay|viet van",
+     "Phần học tập hay lập trình thì mình không hỗ trợ được, mình chỉ là trợ lý ngân hàng VinBank.",
+     "I can't help with coding or homework, I'm VinBank's banking assistant."),
+    (r"chinh tri|bau cu|politic|election|ton giao|religion",
+     "Mình không bàn về chính trị hay tôn giáo, mình chỉ hỗ trợ các vấn đề ngân hàng.",
+     "I don't discuss politics or religion, I only help with banking matters."),
 ]
+
+
+WORD_BOUNDARY = r"\b"
 
 
 def fallback_refusal(text: str) -> str:
@@ -167,7 +204,7 @@ def fallback_refusal(text: str) -> str:
     folded = _fold_diacritics(_canonicalize(text))
     vi_line = en_line = None
     for pattern, vi, en in _REFUSAL_CASES:
-        if re.search(pattern, folded):
+        if re.search(WORD_BOUNDARY + "(?:" + pattern + ")" + WORD_BOUNDARY, folded):
             vi_line, en_line = vi, en
             break
     if vietnamese:
