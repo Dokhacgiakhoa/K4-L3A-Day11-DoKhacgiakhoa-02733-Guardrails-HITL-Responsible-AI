@@ -14,7 +14,8 @@ _RETRY_DELAYS = (4, 10, 20)  # giây; tối đa 3 lần thử lại
 
 def _is_transient(exc: Exception) -> bool:
     msg = f"{type(exc).__name__} {exc}".lower()
-    if "perday" in msg:  # hết quota theo NGÀY: thử lại vô ích
+    # Hết quota theo NGÀY (Gemini "PerDay", OpenRouter "free-models-per-day"): thử lại vô ích
+    if any(m in msg for m in ("perday", "per-day", "per day")):
         return False
     return any(m in msg for m in _TRANSIENT_MARKERS)
 

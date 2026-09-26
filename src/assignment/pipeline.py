@@ -199,9 +199,9 @@ WORD_BOUNDARY = r"\b"
 # provider: openrouter (OPENROUTER_API_KEY) | groq (GROQ_API_KEY) | gemini (GOOGLE_API_KEY,
 # endpoint OpenAI-compatible) | github (GITHUB_MODELS_TOKEN) | openai (OPENAI_API_KEY)
 DEFAULT_REFUSAL_MODELS = (
+    "groq:openai/gpt-oss-120b,"
     "openrouter:google/gemma-4-31b-it:free,"
     "openrouter:qwen/qwen3.8-27b:free,"
-    "groq:llama-3.3-70b-versatile,"
     "gemini:gemini-3.5-flash-lite,"
     "openrouter:liquid/lfm-2.5-2.6b:free"
 )
