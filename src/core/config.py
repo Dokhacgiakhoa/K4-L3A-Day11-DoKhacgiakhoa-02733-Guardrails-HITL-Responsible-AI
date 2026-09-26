@@ -29,6 +29,77 @@ try:
 except ImportError:
     pass
 
+# --- Red profile switch (tuỳ chọn) ---
+# RED_PROFILE=<tên> trong .env → tự set RED_TEAM_PROVIDER / OPENAI_* / GEMINI_*.
+# Không set RED_PROFILE → giữ nguyên hành vi starter.
+# Chỉ profile "gemini" (gemini-3.5-flash) khớp model rubric; còn lại dùng để nháp prompt.
+RED_PROFILES: dict[str, dict[str, str]] = {
+    # name: provider, base_url, key_env, model_env, default_model
+    "gemini": {
+        "provider": "gemini",
+        "key_env": "GOOGLE_API_KEY",
+        "model_env": "GEMINI_MODEL",
+        "default_model": "gemini-3.5-flash",
+    },
+    "openrouter": {
+        "provider": "openai",
+        "base_url": "https://openrouter.ai/api/v1",
+        "key_env": "OPENROUTER_API_KEY",
+        "model_env": "OPENROUTER_RED_MODEL",
+        "default_model": "google/gemma-4-31b-it:free",
+    },
+    "groq": {
+        "provider": "openai",
+        "base_url": "https://api.groq.com/openai/v1",
+        "key_env": "GROQ_API_KEY",
+        "model_env": "GROQ_MODEL",
+        "default_model": "llama-3.3-70b-versatile",
+    },
+    "github": {
+        "provider": "openai",
+        "base_url": "https://models.github.ai/inference",
+        "key_env": "GITHUB_MODELS_TOKEN",
+        "model_env": "GITHUB_MODEL",
+        "default_model": "openai/gpt-4o-mini",
+    },
+    "openai": {
+        "provider": "openai",
+        "key_env": "OPENAI_API_KEY",
+        "model_env": "OPENAI_MODEL",
+        "default_model": "gpt-4o-mini",
+    },
+}
+
+
+def _apply_red_profile() -> None:
+    name = os.environ.get("RED_PROFILE", "").strip().lower()
+    if not name:
+        return
+    profile = RED_PROFILES.get(name)
+    if profile is None:
+        raise ValueError(
+            f"RED_PROFILE={name!r} không hợp lệ. Chọn: {', '.join(RED_PROFILES)}"
+        )
+    key = os.environ.get(profile["key_env"], "").strip()
+    model = (
+        os.environ.get(profile["model_env"], "").strip() or profile["default_model"]
+    )
+    os.environ["RED_TEAM_PROVIDER"] = profile["provider"]
+    if profile["provider"] == "gemini":
+        os.environ["GOOGLE_API_KEY"] = key
+        os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "0"
+        os.environ["GEMINI_MODEL"] = model
+        return
+    os.environ["OPENAI_API_KEY"] = key
+    os.environ["OPENAI_MODEL"] = model
+    if "base_url" in profile:
+        os.environ["OPENAI_BASE_URL"] = profile["base_url"]
+    else:
+        os.environ.pop("OPENAI_BASE_URL", None)
+
+
+_apply_red_profile()
+
 # --- Providers ---
 PROVIDER_OPENAI = "openai"
 PROVIDER_GEMINI = "gemini"
@@ -36,7 +107,8 @@ PROVIDER_OPENROUTER = "openrouter"
 
 # --- Blue Team (LOCKED) ---
 BLUE_PROVIDER = PROVIDER_OPENROUTER
-BLUE_MODEL = "liquid/lfm-2.5-2.6b"
+# ":free" — bản trả phí trên OpenRouter hiện trả 404 "No endpoints found".
+BLUE_MODEL = "liquid/lfm-2.5-2.6b:free"
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 DEFAULT_OPENROUTER_MODEL = BLUE_MODEL  # alias
 

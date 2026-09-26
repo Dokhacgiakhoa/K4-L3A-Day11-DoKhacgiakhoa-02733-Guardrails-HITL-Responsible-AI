@@ -5,7 +5,33 @@ from core.config import get_llm_provider, PROVIDER_OPENROUTER  # noqa: F401
 from core.openai_runtime import OpenAIRunner
 
 
+_TRANSIENT_MARKERS = (
+    "429", "503", "502", "504", "unavailable", "resource_exhausted",
+    "rate limit", "rate-limit", "overloaded", "timed out", "timeout", "connection",
+)
+_RETRY_DELAYS = (4, 10, 20)  # giây; tối đa 3 lần thử lại
+
+
+def _is_transient(exc: Exception) -> bool:
+    msg = f"{type(exc).__name__} {exc}".lower()
+    return any(m in msg for m in _TRANSIENT_MARKERS)
+
+
 async def chat_with_agent(agent, runner, user_message: str, session_id=None):
+    """Như _chat_once nhưng tự thử lại khi gặp lỗi tạm thời (429/503/timeout)."""
+    import asyncio
+
+    for attempt, delay in enumerate((*_RETRY_DELAYS, None)):
+        try:
+            return await _chat_once(agent, runner, user_message, session_id)
+        except Exception as exc:
+            if delay is None or not _is_transient(exc):
+                raise
+            print(f"  [retry {attempt + 1}/{len(_RETRY_DELAYS)}] {type(exc).__name__}; waiting {delay}s")
+            await asyncio.sleep(delay)
+
+
+async def _chat_once(agent, runner, user_message: str, session_id=None):
     """Send a message to the agent and get the response.
 
     Works with OpenAIRunner (OpenAI Red / OpenRouter Blue) and Google ADK (Gemini Red).

@@ -11,6 +11,7 @@ Status convention (không dùng True/False mơ hồ):
 from __future__ import annotations
 
 import re
+import unicodedata
 from typing import Literal
 
 from google.genai import types
@@ -42,6 +43,71 @@ InputStatus = Literal["ALLOW", "BLOCK"]
 # Regex is one signal, not the whole security boundary.
 # ============================================================
 
+_ZERO_WIDTH = dict.fromkeys(
+    map(ord, "​‌‍‎‏⁠⁡⁢⁣﻿­")
+)
+
+
+def _canonicalize(text: str) -> str:
+    """NFKC + drop invisible chars + lowercase + collapse whitespace."""
+    text = unicodedata.normalize("NFKC", text or "").translate(_ZERO_WIDTH)
+    return re.sub(r"\s+", " ", text).strip().lower()
+
+
+def _fold_diacritics(text: str) -> str:
+    """Bỏ dấu tiếng Việt (đ -> d) để một regex bắt được cả hai kiểu gõ."""
+    text = text.replace("đ", "d").replace("Đ", "D")
+    decomposed = unicodedata.normalize("NFD", text)
+    return "".join(c for c in decomposed if not unicodedata.combining(c))
+
+
+INJECTION_PATTERNS = [
+    # --- instruction override
+    r"ignore\s+(?:all\s+|any\s+|the\s+)?(?:previous|prior|above|earlier|your|these|those)?\s*(?:instructions?|rules?|guidelines?|prompts?|directions?)",
+    r"disregard\s+(?:all\s+|any\s+)?(?:previous|prior|above|your|the)?\s*(?:instructions?|rules?|guidelines?)",
+    r"forget\s+(?:all\s+|everything\s+)?(?:you|your|previous|prior|the)\b.{0,30}(?:instructions?|rules?|told|prompt)",
+    r"(?:override|bypass|disable|turn off)\s+(?:your\s+|the\s+|all\s+)?(?:safety|security|guardrails?|filters?|restrictions?|rules?)",
+    # --- role hijack
+    r"\byou are now\b",
+    r"\bpretend\s+(?:you\s+are|to\s+be|you're)\b",
+    r"\bact\s+as\s+(?:a\s+|an\s+)?(?:unrestricted|unfiltered|jailbroken|dan|evil|developer)",
+    r"\b(?:dan|developer|god)\s+mode\b|\bjailbreak(?:ed)?\b",
+    r"\bno\s+(?:restrictions?|rules?|limits?|filters?)\b",
+    # --- prompt / config extraction
+    r"system\s+(?:prompt|instructions?|message)",
+    r"(?:reveal|show|print|display|repeat|output|leak|dump|tell me|give me|share|disclose|expose)\b.{0,40}\b(?:your|the|its)\s+(?:system\s+|initial\s+|hidden\s+|internal\s+|full\s+)?(?:instructions?|prompt|configuration|config|rules)",
+    r"translate\b.{0,40}\b(?:your|the)\s+(?:system\s+|internal\s+|entire\s+|complete\s+)?(?:instructions?|prompt|config(?:uration)?|notes)",
+    # --- credential fishing
+    r"(?:reveal|show|print|display|leak|dump|tell me|give me|share|disclose|expose|read out|send me)\b.{0,50}\b(?:passwords?|api[\s_-]?keys?|secrets?|credentials?|tokens?)",
+    r"\b(?:admin|root|system|internal|database|db)\s+(?:password|passwd|credentials?|host|server|connection|api[\s_-]?key)",
+    r"\b(?:api[\s_-]?key|internal notes?|secret)\b.{0,30}\b(?:is|=|:|are)\b",
+    # --- Vietnamese (đã bỏ dấu)
+    r"\bbo\s+qua\s+(?:moi\s+|tat\s+ca\s+)?(?:huong\s+dan|chi\s+dan|quy\s+tac)",
+    r"\btiet\s+lo\s+(?:mat\s+khau|api|thong\s+tin\s+noi\s+bo|prompt)",
+    r"\bmat\s+khau\s+(?:admin|quan\s+tri|he\s+thong|noi\s+bo)",
+]
+_COMPILED_INJECTION = [re.compile(p, re.IGNORECASE) for p in INJECTION_PATTERNS]
+
+# Đã bỏ mọi ký tự không phải chữ/số -> bắt được kiểu "i g n o r e" hay "i.g.n.o.r.e"
+_SQUASHED_MARKERS = (
+    "ignoreallpreviousinstructions",
+    "ignorepreviousinstructions",
+    "ignoreallinstructions",
+    "ignoretheaboveinstructions",
+    "disregardpreviousinstructions",
+    "systemprompt",
+    "revealyourprompt",
+    "revealyourinstructions",
+    "developermode",
+    "youarenowdan",
+)
+
+# Giá trị secret demo xuất hiện trong INPUT
+_SECRET_IN_INPUT = re.compile(
+    r"admin123|sk-vinbank|vinbank-secret|db\.vinbank\.internal", re.IGNORECASE
+)
+
+
 def detect_injection(user_input: str) -> InputStatus:
     """Detect prompt injection patterns in user input.
 
@@ -51,15 +117,24 @@ def detect_injection(user_input: str) -> InputStatus:
     Returns:
         ``"BLOCK"`` if injection detected (chặn), ``"ALLOW"`` otherwise (cho qua).
     """
-    INJECTION_PATTERNS = [
-        # TODO: Add at least 5 regex patterns
-        # Example:
-        # r"ignore (all )?(previous|above) instructions",
-    ]
+    canon = _canonicalize(user_input)
+    if not canon:
+        return "ALLOW"
+    folded = _fold_diacritics(canon)
 
-    for pattern in INJECTION_PATTERNS:
-        if re.search(pattern, user_input, re.IGNORECASE):
+    # Tín hiệu 1+2: regex trên văn bản đã chuẩn hoá và trên bản bỏ dấu
+    for candidate in (canon, folded):
+        if any(p.search(candidate) for p in _COMPILED_INJECTION):
             return "BLOCK"
+
+    # Tín hiệu 3: chuỗi "nén" chống chèn ký tự phân tách (i.g.n.o.r.e)
+    squashed = re.sub(r"[^a-z0-9]", "", folded)
+    if any(marker in squashed for marker in _SQUASHED_MARKERS):
+        return "BLOCK"
+
+    # Tín hiệu 4: secret demo xuất hiện trong INPUT = kẻ tấn công đang "xác nhận"
+    if _SECRET_IN_INPUT.search(canon) or _SECRET_IN_INPUT.search(squashed):
+        return "BLOCK"
     return "ALLOW"
 
 
@@ -74,6 +149,14 @@ def detect_injection(user_input: str) -> InputStatus:
 # Return ``"ALLOW"`` if banking-related and OK.
 # ============================================================
 
+# Bổ sung ngoài config.ALLOWED_TOPICS (câu banking hay gặp nhưng thiếu từ khoá gốc).
+_EXTRA_ALLOWED_TOPICS = [
+    "rate", "card", "money", "vnd", "mortgage", "bank", "fee", "statement",
+    "bill", "otp", "mobile banking", "internet banking", "branch", "hotline",
+    "the ghi no", "sao ke", "phi", "khoan vay", "gui tien", "rut tien",
+]
+
+
 def topic_filter(user_input: str) -> InputStatus:
     """Decide whether the input is on-topic for VinBank.
 
@@ -84,14 +167,21 @@ def topic_filter(user_input: str) -> InputStatus:
         ``"BLOCK"`` = chặn (off-topic hoặc topic cấm).
         ``"ALLOW"`` = cho qua (câu banking hợp lệ).
     """
-    input_lower = user_input.lower()
+    text = _fold_diacritics(_canonicalize(user_input))
+    if not text:
+        return "BLOCK"
 
-    # TODO: Implement logic:
-    # 1. If input contains any blocked topic -> return "BLOCK"
-    # 2. If input doesn't contain any allowed topic -> return "BLOCK"
-    # 3. Otherwise -> return "ALLOW"
+    def _has(term: str) -> bool:
+        term = _fold_diacritics(term.lower())
+        return re.search(rf"(?<![a-z0-9]){re.escape(term)}(?![a-z0-9])", text) is not None
 
-    pass  # Replace with your implementation
+    # 1. Topic cấm (khớp nguyên từ: "skilled" không dính "kill")
+    if any(_has(t) for t in BLOCKED_TOPICS):
+        return "BLOCK"
+    # 2. Không dính topic banking nào -> off-topic
+    if not any(_has(t) for t in (*ALLOWED_TOPICS, *_EXTRA_ALLOWED_TOPICS)):
+        return "BLOCK"
+    return "ALLOW"
 
 
 # ============================================================
@@ -112,6 +202,7 @@ class InputGuardrailPlugin(base_plugin.BasePlugin):
         super().__init__(name="input_guardrail")
         self.blocked_count = 0
         self.total_count = 0
+        self.last_reason: str | None = None  # "injection" | "topic" | None
 
     def _extract_text(self, content: types.Content) -> str:
         """Extract plain text from a Content object."""
@@ -144,14 +235,25 @@ class InputGuardrailPlugin(base_plugin.BasePlugin):
         self.total_count += 1
         text = self._extract_text(user_message)
 
-        # TODO: Implement logic:
-        # 1. Call detect_injection(text)
-        #    - If "BLOCK": increment blocked_count, return self._block_response("...")
-        # 2. Call topic_filter(text)
-        #    - If "BLOCK": increment blocked_count, return self._block_response("...")
-        # 3. If both return "ALLOW": return None (let message through)
-
-        pass  # Replace with your implementation
+        if detect_injection(text) == "BLOCK":
+            self.blocked_count += 1
+            self.last_reason = "injection"
+            return self._block_response(
+                "I can't help with that request. It looks like an attempt to "
+                "override my instructions or access internal information. "
+                "I can help with VinBank questions such as accounts, transfers, "
+                "savings rates, loans and cards."
+            )
+        if topic_filter(text) == "BLOCK":
+            self.blocked_count += 1
+            self.last_reason = "topic"
+            return self._block_response(
+                "I can only help with VinBank banking topics such as accounts, "
+                "transactions, savings, loans and credit cards. "
+                "Could you ask a banking-related question?"
+            )
+        self.last_reason = None
+        return None
 
 
 # ============================================================
