@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+:root {
+  --tron-cyan: #00f5ff;
+  --tron-cyan-glow: rgba(0, 245, 255, 0.6);
+  --tron-orange: #ff4500;
+  --tron-orange-glow: rgba(255, 69, 0, 0.6);
+  --tron-gold: #ffd166;
+  --tron-black: #020409;
+}
+
+body {
+  background-color: var(--tron-black);
+  color: #f1f5f9;
+  font-family: 'Chakra Petch', sans-serif;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  font-size: 15px;
+}
+
+.font-orbitron {
+  font-family: 'Orbitron', monospace, sans-serif;
+}
+
+.font-chakra {
+  font-family: 'Chakra Petch', sans-serif;
+}
+
+.font-mono-tech {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* TRON: Legacy Floor & Sky Grid Matrix */
+.tron-grid-bg {
+  background-color: #020409;
+  background-image: 
+    linear-gradient(to right, rgba(0, 245, 255, 0.08) 1.5px, transparent 1.5px),
+    linear-gradient(to bottom, rgba(255, 69, 0, 0.08) 1.5px, transparent 1.5px);
+  background-size: 40px 40px;
+}
+
+/* TRON Light Strip Border Panels */
+.tron-panel-red {
+  background: radial-gradient(circle at 10% 20%, rgba(55, 12, 5, 0.9) 0%, rgba(8, 2, 4, 0.98) 100%);
+  border: 1.5px solid rgba(255, 69, 0, 0.4);
+  box-shadow: 0 0 25px rgba(255, 69, 0, 0.15), inset 0 0 30px rgba(255, 69, 0, 0.1);
+}
+
+.tron-panel-blue {
+  background: radial-gradient(circle at 90% 20%, rgba(4, 32, 50, 0.9) 0%, rgba(2, 8, 16, 0.98) 100%);
+  border: 1.5px solid rgba(0, 245, 255, 0.4);
+  box-shadow: 0 0 25px rgba(0, 245, 255, 0.15), inset 0 0 30px rgba(0, 245, 255, 0.1);
+}
+
+/* TRON Chamfer Corners */
+.tron-chamfer {
+  clip-path: polygon(14px 0%, calc(100% - 14px) 0%, 100% 14px, 100% calc(100% - 14px), calc(100% - 14px) 100%, 14px 100%, 0% calc(100% - 14px), 0% 14px);
+}
+
+.tron-chamfer-left {
+  clip-path: polygon(16px 0%, 100% 0%, 100% 100%, 0% 100%, 0% 16px);
+}
+
+.tron-chamfer-right {
+  clip-path: polygon(0% 0%, calc(100% - 16px) 0%, 100% 16px, 100% 100%, 0% 100%);
+}
+
+/* Neon Text Glow TRON Style */
+.glow-text-orange {
+  text-shadow: 0 0 10px rgba(255, 69, 0, 0.9), 0 0 22px rgba(255, 69, 0, 0.5), 0 0 35px rgba(255, 69, 0, 0.3);
+}
+
+.glow-text-cyan {
+  text-shadow: 0 0 10px rgba(0, 245, 255, 0.9), 0 0 22px rgba(0, 245, 255, 0.5), 0 0 35px rgba(0, 245, 255, 0.3);
+}
+
+.glow-text-gold {
+  text-shadow: 0 0 10px rgba(255, 209, 102, 0.9), 0 0 22px rgba(255, 209, 102, 0.5);
+}
+
+/* TRON Disc Pulsing Animation */
+@keyframes tron-disc-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-disc-spin {
+  animation: tron-disc-spin 8s linear infinite;
+}
+
+/* Glitch Effect */
+@keyframes cyber-glitch {
+  0% { transform: translate(0) }
+  20% { transform: translate(-4px, 4px) }
+  40% { transform: translate(-4px, -4px) }
+  60% { transform: translate(4px, 4px) }
+  80% { transform: translate(4px, -4px) }
+  100% { transform: translate(0) }
+}
+
+.glitch-active {
+  animation: cyber-glitch 0.2s infinite;
+  filter: hue-rotate(90deg) contrast(1.4);
+}
