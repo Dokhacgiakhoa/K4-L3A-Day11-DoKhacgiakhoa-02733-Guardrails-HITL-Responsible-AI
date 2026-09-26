@@ -19,7 +19,7 @@ export const RedCorner: React.FC<RedCornerProps> = ({
   isBattling,
 }) => {
   return (
-    <div className="flex-1 flex flex-col h-full tron-panel-red p-4 sm:p-5 overflow-y-auto">
+    <div className="flex-1 flex flex-col h-full tron-panel-red bg-red-hacker p-4 sm:p-5 overflow-y-auto">
       
       {/* Header Red Adversary */}
       <div className="flex items-center justify-between pb-3 border-b-2 border-[#ff4500]/30">

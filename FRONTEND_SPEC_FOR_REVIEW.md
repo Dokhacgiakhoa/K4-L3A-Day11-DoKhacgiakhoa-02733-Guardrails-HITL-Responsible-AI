@@ -33,7 +33,7 @@ Cần kiểm tra hiển thị tiếng Việt có dấu với Orbitron / Share Te
 | Nhãn trên UI | `mode` gửi backend | Agent thật | Model |
 |---|---|---|---|
 | Chưa Bật Guardrail | `red` | `create_red_agent_default()`: không guardrail, dễ leak | Gemini `gemini-3.5-flash` |
-| Gia Cố Prompt | `red_advance` | `create_red_agent_advance()`: guardrail mạnh (bonus B2) | Gemini `gemini-3.5-flash` |
+| Red Advance | `red_advance` | `create_red_agent_advance()`: guardrail mạnh (bonus B2) | Gemini `gemini-3.5-flash` |
 | Full 5 Lá Chắn | `blue` | Pipeline Blue (CP2–CP3) | OpenRouter `liquid/lfm-2.5-2.6b:free` |
 
 Red / Red Advance **không** đi qua pipeline của Blue. Trên UI các cửa 1, 2, 4 hiện **BỎ QUA**.

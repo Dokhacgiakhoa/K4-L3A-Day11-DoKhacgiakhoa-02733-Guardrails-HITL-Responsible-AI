@@ -46,6 +46,28 @@ body {
 }
 
 /* TRON Light Strip Border Panels */
+/* Ảnh nền 3 cột (frontend/public/bg). Lớp gradient phía trên làm tối ảnh để chữ luôn đọc được. */
+.bg-red-hacker {
+  background:
+    linear-gradient(180deg, rgba(8, 2, 4, 0.78) 0%, rgba(8, 2, 4, 0.86) 55%, rgba(8, 2, 4, 0.94) 100%),
+    url('/bg/red_hacker.jpg') 60% 55% / 150% auto no-repeat,
+    #080204 !important;
+}
+
+.bg-blue-guard {
+  background:
+    linear-gradient(180deg, rgba(2, 8, 16, 0.76) 0%, rgba(2, 8, 16, 0.85) 55%, rgba(2, 8, 16, 0.94) 100%),
+    url('/bg/blue_guard.jpg') center 20% / cover no-repeat,
+    #020810 !important;
+}
+
+.bg-battle-field {
+  background:
+    linear-gradient(180deg, rgba(3, 6, 18, 0.7) 0%, rgba(3, 6, 18, 0.8) 60%, rgba(3, 6, 18, 0.92) 100%),
+    url('/bg/battle_field.jpg') center / cover no-repeat,
+    #030612 !important;
+}
+
 .tron-panel-red {
   background: radial-gradient(circle at 10% 20%, rgba(55, 12, 5, 0.9) 0%, rgba(8, 2, 4, 0.98) 100%);
   border: 1.5px solid rgba(255, 69, 0, 0.4);
@@ -78,6 +100,10 @@ body {
 
 .glow-text-cyan {
   text-shadow: 0 0 10px rgba(0, 245, 255, 0.9), 0 0 22px rgba(0, 245, 255, 0.5), 0 0 35px rgba(0, 245, 255, 0.3);
+}
+
+.glow-text-green {
+  text-shadow: 0 0 10px rgba(0, 255, 136, 0.9), 0 0 22px rgba(0, 255, 136, 0.5), 0 0 35px rgba(0, 255, 136, 0.3);
 }
 
 .glow-text-gold {

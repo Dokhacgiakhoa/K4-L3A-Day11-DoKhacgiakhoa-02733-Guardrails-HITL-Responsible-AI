@@ -22,7 +22,7 @@ export const BlueCorner: React.FC<BlueCornerProps> = ({
   currentStep,
 }) => {
   return (
-    <div className="flex-1 flex flex-col h-full tron-panel-blue p-4 sm:p-5 overflow-y-auto">
+    <div className="flex-1 flex flex-col h-full tron-panel-blue bg-blue-guard p-4 sm:p-5 overflow-y-auto">
       
       {/* Header Blue Guardian & Chế độ phòng vệ */}
       <div className="flex flex-col gap-2.5 pb-3 border-b-2 border-cyan-400/30">
@@ -87,9 +87,9 @@ export const BlueCorner: React.FC<BlueCornerProps> = ({
                   ? 'bg-amber-500 text-black shadow-[0_0_10px_#ffd166]'
                   : 'text-gray-300 hover:text-white'
               }`}
-              title="Gia cố System Prompt (Bonus B2)"
+              title="Red Advance: prompt gia cố + input/output guardrail riêng (Bonus B2)"
             >
-              Gia Cố Prompt
+              Red Advance
             </button>
             <button
               onClick={() => onChangeDefenseMode('blue_guard')}

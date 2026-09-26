@@ -92,10 +92,10 @@ export const ScoreBoard: React.FC<ScoreBoardProps> = ({
           </div>
         </div>
 
-        {/* 5 Vạch Máu Vault Của Blue (DUY NHẤT TRÊN GIAO DIỆN) */}
+        {/* 5 Vạch Máu Vault Của Blue (MÀU XANH LÁ CÂY NEON) */}
         <div className="text-left">
-          <div className="text-[10px] font-mono-tech tracking-wider text-[#00f5ff] font-bold uppercase flex items-center gap-1">
-            <Shield className="w-3 h-3 text-[#00f5ff]" /> MÁU VAULT
+          <div className="text-[10px] font-mono-tech tracking-wider text-[#00ff88] font-bold uppercase flex items-center gap-1">
+            <Shield className="w-3 h-3 text-[#00ff88]" /> MÁU VAULT
           </div>
           <div className="flex items-center gap-1 mt-1">
             {Array.from({ length: maxBars }).map((_, idx) => {
@@ -106,7 +106,7 @@ export const ScoreBoard: React.FC<ScoreBoardProps> = ({
                   className={`w-3.5 h-5 rounded-[2px] border transition-all duration-500 ${
                     isAlive
                       ? vaultBars > 2
-                        ? 'bg-[#00f5ff] border-cyan-300 shadow-[0_0_8px_#00f5ff]'
+                        ? 'bg-[#00ff88] border-emerald-300 shadow-[0_0_10px_#00ff88]'
                         : 'bg-[#ff4500] border-red-400 shadow-[0_0_8px_#ff4500] animate-pulse'
                       : 'bg-gray-900/80 border-white/10 opacity-30'
                   }`}
@@ -114,7 +114,7 @@ export const ScoreBoard: React.FC<ScoreBoardProps> = ({
                 />
               );
             })}
-            <span className="font-orbitron font-black text-sm text-[#00f5ff] ml-1 glow-text-cyan">
+            <span className="font-orbitron font-black text-sm text-[#00ff88] ml-1 glow-text-green">
               {vaultBars}/{maxBars}
             </span>
           </div>

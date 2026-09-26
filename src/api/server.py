@@ -116,37 +116,109 @@ async def _run(mode: str, message: str, user_id: str) -> dict:
         from core.utils import chat_with_agent
 
         agent, runner = _red_agent(mode)
-        label = "Red" if mode == "red" else "Red Advance"
-        not_here = f"{label} không đi qua pipeline của Blue"
-        trace = [
-            {"step": "rate_limit", "status": "skipped", "detail": not_here, "ms": 0.0},
-            {"step": "input_guardrail", "status": "skipped", "detail": not_here, "ms": 0.0},
-        ]
-        t0 = time.perf_counter()
-        try:
-            text, _ = await chat_with_agent(agent, runner, message)
-            text = (text or "").strip()
-            trace.append({"step": "llm", "status": "passed",
-                          "detail": f"{label} ({config.red_provider_label()}) trả lời "
-                                    f"({len(text)} ký tự)",
-                          "ms": round((time.perf_counter() - t0) * 1000, 1)})
-            out = {"mode": mode, "blocked": False, "layer": None,
-                   "response": text, "error": None, "request_id": None}
-        except Exception as exc:  # noqa: BLE001
-            err = f"{type(exc).__name__}: {exc}"
-            trace.append({"step": "llm", "status": "error", "detail": err[:200],
-                          "ms": round((time.perf_counter() - t0) * 1000, 1)})
-            out = {"mode": mode, "blocked": False, "layer": "error",
-                   "response": f"[LLM unavailable] {err}", "error": err, "request_id": None}
-        trace.append({"step": "output_guardrail", "status": "skipped",
-                      "detail": f"{label} không có output guardrail của Blue", "ms": 0.0})
-        out["trace"] = trace
+        if mode == "red":
+            out = await _run_red_default(agent, runner, message)
+        else:
+            out = await _run_red_advance(agent, runner, message)
 
     out["input"] = message
     out["leaked"] = response_leaked_secrets(out["response"])
     out["trace"].append(_egress_step(out))
     out["latency_ms"] = round((time.perf_counter() - started) * 1000, 1)
     return out
+
+
+def _ms(t0: float) -> float:
+    return round((time.perf_counter() - t0) * 1000, 1)
+
+
+async def _call_llm(agent, runner, message: str, label: str) -> tuple[dict, dict]:
+    """Gọi agent Red/Red Advance; trả (bước llm, phần out)."""
+    from core.utils import chat_with_agent
+
+    t0 = time.perf_counter()
+    try:
+        text, _ = await chat_with_agent(agent, runner, message)
+        text = (text or "").strip()
+        step = {"step": "llm", "status": "passed",
+                "detail": f"{label} ({config.red_provider_label()}) trả lời ({len(text)} ký tự)",
+                "ms": _ms(t0)}
+        return step, {"blocked": False, "layer": None, "response": text, "error": None}
+    except Exception as exc:  # noqa: BLE001
+        err = f"{type(exc).__name__}: {exc}"
+        step = {"step": "llm", "status": "error", "detail": err[:200], "ms": _ms(t0)}
+        return step, {"blocked": False, "layer": "error",
+                      "response": f"[LLM unavailable] {err}", "error": err}
+
+
+async def _run_red_default(agent, runner, message: str) -> dict:
+    """Red: KHÔNG có lớp nào ngoài LLM."""
+    none = "Red không có lớp này (agent mềm, không guardrail)"
+    llm, out = await _call_llm(agent, runner, message, "Red")
+    out.update(mode="red", request_id=None, trace=[
+        {"step": "rate_limit", "status": "skipped", "detail": none, "ms": 0.0},
+        {"step": "input_guardrail", "status": "skipped", "detail": none, "ms": 0.0},
+        llm,
+        {"step": "output_guardrail", "status": "skipped", "detail": none, "ms": 0.0},
+    ])
+    return out
+
+
+async def _run_red_advance(agent, runner, message: str) -> dict:
+    """Red Advance: có input + output guardrail RIÊNG (guards_agent.py), không rate limit.
+
+    Input: detect_injection_strong / topic_filter_strong (cùng hàm plugin dùng).
+    Output: content_filter_strong thay cả câu trả lời bằng thông báo an toàn.
+    """
+    from agents.guards_agent import detect_injection_strong, topic_filter_strong
+
+    t0 = time.perf_counter()
+    injection = detect_injection_strong(message)
+    off_topic = (not injection) and topic_filter_strong(message)
+    input_ms = _ms(t0)
+    trace = [{"step": "rate_limit", "status": "skipped",
+              "detail": "Red Advance không có rate limiter", "ms": 0.0}]
+
+    if injection or off_topic:
+        trace.append({"step": "input_guardrail", "status": "blocked", "ms": input_ms,
+                      "detail": "Guardrail riêng của Red Advance: "
+                                + ("phát hiện injection" if injection else "ngoài chủ đề ngân hàng")})
+        llm, out = await _call_llm(agent, runner, message, "Red Advance")
+        if config.red_uses_gemini():
+            # ADK: on_user_message_callback trả Content = THAY tin nhắn user, không ngắt luồng.
+            # LLM vẫn chạy nhưng chỉ nhận câu từ chối, không thấy prompt gốc.
+            if llm["status"] == "passed":
+                llm["detail"] = ("LLM vẫn được gọi (cơ chế ADK) nhưng chỉ nhận câu từ chối "
+                                 "thay cho prompt gốc")
+            trace.append(llm)
+        else:
+            trace.append({"step": "llm", "status": "skipped",
+                          "detail": "Không gọi LLM — input hook chặn trước", "ms": 0.0})
+        trace.append({"step": "output_guardrail", "status": "skipped",
+                      "detail": "Prompt gốc không tới LLM — không có gì cần quét", "ms": 0.0})
+        if not out.get("error"):
+            out.update(blocked=True, layer="input_guardrail")
+    else:
+        trace.append({"step": "input_guardrail", "status": "passed", "ms": input_ms,
+                      "detail": "Guardrail riêng của Red Advance: cho qua"})
+        llm, out = await _call_llm(agent, runner, message, "Red Advance")
+        trace.append(llm)
+        if out.get("error"):
+            trace.append({"step": "output_guardrail", "status": "skipped",
+                          "detail": "LLM lỗi — không có câu trả lời", "ms": 0.0})
+        elif out["response"].startswith(_RED_ADVANCE_OUTPUT_BLOCK):
+            out.update(blocked=True, layer="output_guardrail")
+            trace.append({"step": "output_guardrail", "status": "redacted", "ms": 0.0,
+                          "detail": "Guardrail riêng của Red Advance thay câu trả lời chứa secret"})
+        else:
+            trace.append({"step": "output_guardrail", "status": "passed", "ms": 0.0,
+                          "detail": "Guardrail riêng của Red Advance: không thấy secret"})
+    out.update(mode="red_advance", request_id=None, trace=trace)
+    return out
+
+
+# Thông báo mà GuardsOutputPlugin / _output_hook dùng khi thay câu trả lời
+_RED_ADVANCE_OUTPUT_BLOCK = "I cannot share internal system details."
 
 
 def _egress_step(out: dict) -> dict:

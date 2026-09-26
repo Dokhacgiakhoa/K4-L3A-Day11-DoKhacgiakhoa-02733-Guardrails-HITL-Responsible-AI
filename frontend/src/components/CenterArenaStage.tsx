@@ -20,7 +20,7 @@ export const CenterArenaStage: React.FC<CenterArenaStageProps> = ({
   lastResult,
 }) => {
   return (
-    <div className="relative flex flex-col items-center justify-between w-full md:w-[340px] lg:w-[400px] h-full bg-[#030612] border-x border-white/10 p-4 shrink-0 overflow-hidden shadow-[inset_0_0_40px_rgba(0,0,0,0.9)] !bg-none">
+    <div className="relative flex flex-col items-center justify-between w-full md:w-[340px] lg:w-[400px] h-full bg-battle-field border-x border-white/10 p-4 shrink-0 overflow-hidden shadow-[inset_0_0_40px_rgba(0,0,0,0.9)]">
       
       {/* Top Combat Stage Header */}
       <div className="relative z-10 w-full text-center py-2 px-3 bg-black/80 border border-white/10 rounded-xl backdrop-blur-md">
@@ -94,8 +94,8 @@ export const CenterArenaStage: React.FC<CenterArenaStageProps> = ({
           </div>
         ) : lastResult ? (
           lastResult.winner === 'BLUE' ? (
-            <div className="flex flex-col items-center justify-center text-center p-6 bg-cyan-950/40 border-2 border-cyan-400 rounded-2xl backdrop-blur-md shadow-[0_0_25px_rgba(0,245,255,0.2)]">
-              <div className="text-xl sm:text-2xl font-orbitron font-black text-[#00f5ff] tracking-wider uppercase glow-text-cyan leading-tight">
+            <div className="flex flex-col items-center justify-center text-center p-6 bg-emerald-950/50 border-2 border-[#00ff88] rounded-2xl backdrop-blur-md shadow-[0_0_30px_rgba(0,255,136,0.25)]">
+              <div className="text-xl sm:text-2xl font-orbitron font-black text-[#00ff88] tracking-wider uppercase glow-text-green leading-tight">
                 PHÒNG THỦ THÀNH CÔNG
               </div>
               <div className="text-xs sm:text-sm font-chakra text-white font-bold mt-2.5 tracking-wide">
@@ -103,7 +103,7 @@ export const CenterArenaStage: React.FC<CenterArenaStageProps> = ({
                   ? `CỬA ${lastResult.gateTriggered} ĐÃ ${lastResult.outputGuardStatus === 'REDACTED' ? 'CHE GIẤU SECRET' : 'CHẶN ĐỨNG ĐÒN TẤN CÔNG'}`
                   : 'KHÔNG LỘ BÍ MẬT — TRẢ LỜI HỢP LỆ'}
               </div>
-              <div className="text-xs font-mono-tech text-cyan-300 mt-1">
+              <div className="text-xs font-mono-tech text-emerald-300 mt-1">
                 Bảo toàn nguyên vẹn vạch máu Vault ngân hàng
               </div>
             </div>
@@ -121,11 +121,11 @@ export const CenterArenaStage: React.FC<CenterArenaStageProps> = ({
             </div>
           )
         ) : (
-          <div className="flex flex-col items-center justify-center text-center p-6 bg-black/50 border border-white/10 rounded-2xl backdrop-blur-md">
-            <div className="text-base sm:text-lg font-orbitron font-bold text-cyan-300 tracking-wider">
+          <div className="flex flex-col items-center justify-center text-center p-6 bg-emerald-950/30 border border-emerald-500/40 rounded-2xl backdrop-blur-md shadow-[0_0_20px_rgba(0,255,136,0.15)]">
+            <div className="text-base sm:text-lg font-orbitron font-black text-[#00ff88] tracking-wider glow-text-green">
               HỆ THỐNG TRỰC CHIẾN AN TOÀN
             </div>
-            <div className="text-xs font-chakra text-gray-400 mt-1.5">
+            <div className="text-xs font-chakra text-emerald-100/80 mt-1.5 font-medium">
               Chọn chiêu thức bên Red hoặc bấm LƯỢT NGẪU NHIÊN để bắt đầu
             </div>
           </div>
