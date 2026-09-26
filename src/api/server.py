@@ -106,7 +106,7 @@ async def _run(mode: str, message: str, user_id: str) -> dict:
     started = time.perf_counter()
 
     if mode == "blue":
-        res = await _pipeline().handle(message, user_id=user_id)
+        res = await _pipeline().handle(message, user_id=user_id, contextual_refusal=True)
         out = {
             "mode": mode, "blocked": res["blocked"], "layer": res["layer"],
             "response": res["response"], "error": res["error"],
