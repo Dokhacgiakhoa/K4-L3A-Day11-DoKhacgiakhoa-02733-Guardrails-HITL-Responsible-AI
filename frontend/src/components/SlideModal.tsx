@@ -199,7 +199,7 @@ export const SlideModal: React.FC<SlideModalProps> = ({ isOpen, onClose, onStart
               </div>
 
               <div className="p-4 bg-[#ffd166]/10 border-2 border-[#ffd166]/40 rounded-xl text-xs sm:text-sm text-[#ffd166] font-chakra font-medium">
-                ⚡ <strong>Tổng kết giải đấu:</strong> Trận đấu kéo dài tối đa 10 vòng. Bạn có thể tự chọn từng đòn đánh hoặc nhấn <strong>"AUTO BATTLE"</strong> để sàn đấu tự động chạy mô phỏng các round!
+                ⚡ <strong>Tổng kết giải đấu:</strong> Mỗi ván tối đa 4 lượt, mỗi lượt gọi hệ thống thật (Guardrails + LLM). Tự chọn đòn đánh, nhập prompt, hoặc nhấn <strong>"LƯỢT NGẪU NHIÊN"</strong>. Sau mỗi lượt sàn đấu dừng lại cho đến khi bạn bấm <strong>"TIẾP TỤC"</strong> hoặc gửi prompt mới.
               </div>
             </div>
           )}

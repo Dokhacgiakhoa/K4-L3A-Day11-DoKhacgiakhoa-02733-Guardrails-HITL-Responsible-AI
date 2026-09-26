@@ -37,6 +37,7 @@ REPO_ROOT = _SRC.parent
 OUTPUTS = REPO_ROOT / "outputs"
 WEB_DIR = REPO_ROOT / "web"
 MODES = ("blue", "red", "red_advance")
+EGRESS_DEMO_DESTINATION = "https://cases.vinbank.example/v1/cases"
 
 app = FastAPI(title="Lab 11 — Guardrails demo backend", version="1.0")
 app.add_middleware(
@@ -109,25 +110,61 @@ async def _run(mode: str, message: str, user_id: str) -> dict:
         out = {
             "mode": mode, "blocked": res["blocked"], "layer": res["layer"],
             "response": res["response"], "error": res["error"],
-            "request_id": res["request_id"],
+            "request_id": res["request_id"], "trace": res["trace"],
         }
     else:
         from core.utils import chat_with_agent
 
         agent, runner = _red_agent(mode)
+        label = "Red" if mode == "red" else "Red Advance"
+        not_here = f"{label} không đi qua pipeline của Blue"
+        trace = [
+            {"step": "rate_limit", "status": "skipped", "detail": not_here, "ms": 0.0},
+            {"step": "input_guardrail", "status": "skipped", "detail": not_here, "ms": 0.0},
+        ]
+        t0 = time.perf_counter()
         try:
             text, _ = await chat_with_agent(agent, runner, message)
+            text = (text or "").strip()
+            trace.append({"step": "llm", "status": "passed",
+                          "detail": f"{label} ({config.red_provider_label()}) trả lời "
+                                    f"({len(text)} ký tự)",
+                          "ms": round((time.perf_counter() - t0) * 1000, 1)})
             out = {"mode": mode, "blocked": False, "layer": None,
-                   "response": (text or "").strip(), "error": None, "request_id": None}
+                   "response": text, "error": None, "request_id": None}
         except Exception as exc:  # noqa: BLE001
             err = f"{type(exc).__name__}: {exc}"
+            trace.append({"step": "llm", "status": "error", "detail": err[:200],
+                          "ms": round((time.perf_counter() - t0) * 1000, 1)})
             out = {"mode": mode, "blocked": False, "layer": "error",
                    "response": f"[LLM unavailable] {err}", "error": err, "request_id": None}
+        trace.append({"step": "output_guardrail", "status": "skipped",
+                      "detail": f"{label} không có output guardrail của Blue", "ms": 0.0})
+        out["trace"] = trace
 
     out["input"] = message
     out["leaked"] = response_leaked_secrets(out["response"])
+    out["trace"].append(_egress_step(out))
     out["latency_ms"] = round((time.perf_counter() - started) * 1000, 1)
     return out
+
+
+def _egress_step(out: dict) -> dict:
+    """Bước 5 (minh hoạ): nếu gửi câu trả lời này sang hệ thống case nội bộ thì egress có cho không?"""
+    from assignment.pipeline import is_egress_allowed
+
+    if out.get("error"):
+        return {"step": "egress", "status": "skipped",
+                "detail": "LLM lỗi — không có dữ liệu để gửi đi", "ms": 0.0}
+    t0 = time.perf_counter()
+    allowed = is_egress_allowed(EGRESS_DEMO_DESTINATION, out["response"])
+    return {
+        "step": "egress",
+        "status": "passed" if allowed else "blocked",
+        "detail": (f"Cho phép gửi tới {EGRESS_DEMO_DESTINATION}" if allowed
+                   else "Chặn: payload chứa secret / PII — không được gửi ra ngoài"),
+        "ms": round((time.perf_counter() - t0) * 1000, 2),
+    }
 
 
 # ---------------------------------------------------------------------------

@@ -1,200 +1,192 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
-import gsap from 'gsap';
-import { Lightbulb, RotateCcw, Play, Pause, Swords, Shield, Zap, Disc3, Radio } from 'lucide-react';
+import React from 'react';
+import { RotateCcw, Play, Pause, Swords, Shield, Zap, Radio, Lightbulb, FastForward, Loader2 } from 'lucide-react';
 
 interface ScoreBoardProps {
-  redScore: number;
-  blueScore: number;
-  round: number;
-  maxRounds: number;
+  currentAttempt: number;
+  maxAttempts: number;
+  vaultBars: number;
+  maxBars: number;
+  redBreaches: number;
+  blueDefends: number;
   isBattling: boolean;
-  isAutoPlaying: boolean;
-  onToggleAutoPlay: () => void;
+  onNextRound: () => void;
   onReset: () => void;
   onOpenSlides: () => void;
 }
 
 export const ScoreBoard: React.FC<ScoreBoardProps> = ({
-  redScore,
-  blueScore,
-  round,
-  maxRounds,
+  currentAttempt,
+  maxAttempts,
+  vaultBars,
+  maxBars,
+  redBreaches,
+  blueDefends,
   isBattling,
-  isAutoPlaying,
-  onToggleAutoPlay,
+  onNextRound,
   onReset,
   onOpenSlides,
 }) => {
-  const redScoreRef = useRef<HTMLDivElement | null>(null);
-  const blueScoreRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (redScoreRef.current && redScore > 0) {
-      gsap.fromTo(
-        redScoreRef.current,
-        { scale: 1.5, color: '#ffffff' },
-        { scale: 1, color: '#ff4500', duration: 0.45, ease: 'back.out(2)' }
-      );
-    }
-  }, [redScore]);
-
-  useEffect(() => {
-    if (blueScoreRef.current && blueScore > 0) {
-      gsap.fromTo(
-        blueScoreRef.current,
-        { scale: 1.5, color: '#ffffff' },
-        { scale: 1, color: '#00f5ff', duration: 0.45, ease: 'back.out(2)' }
-      );
-    }
-  }, [blueScore]);
-
   return (
-    <header className="relative z-40 w-full px-6 py-3.5 bg-[#030712]/95 border-b-2 border-cyan-400/30 backdrop-blur-2xl flex items-center justify-between shadow-[0_4px_35px_rgba(0,0,0,0.9)]">
+    <header className="relative z-40 w-full px-6 py-2.5 bg-[#030712]/95 border-b-2 border-cyan-400/30 backdrop-blur-2xl flex items-center justify-between shadow-[0_4px_35px_rgba(0,0,0,0.9)]">
       
       {/* Top Neon Light Ribbon */}
       <div className="absolute top-0 left-0 right-0 h-[2.5px] bg-gradient-to-r from-[#ff4500] via-[#ffd166] to-[#00f5ff] shadow-[0_0_12px_#00f5ff]" />
 
-      {/* Left: TRON Grid Title */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex items-center justify-center w-12 h-12 bg-gradient-to-br from-[#ff4500] to-[#00f5ff] p-[1.5px] tron-chamfer-left">
+      {/* Left: Brand Header - Gọn gàng không lặp chữ */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex items-center justify-center w-10 h-10 bg-gradient-to-br from-[#ff4500] to-[#00f5ff] p-[1.5px] tron-chamfer-left">
           <div className="w-full h-full bg-[#050b18] flex items-center justify-center tron-chamfer-left">
-            <Swords className="w-6 h-6 text-[#00f5ff] filter drop-shadow-[0_0_10px_#00f5ff]" />
+            <Swords className="w-5 h-5 text-[#00f5ff] filter drop-shadow-[0_0_8px_#00f5ff]" />
           </div>
         </div>
 
         <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="font-orbitron font-black text-lg sm:text-2xl tracking-wider text-white uppercase glow-text-cyan">
+          <div className="flex items-center gap-2">
+            <h1 className="font-orbitron font-black text-base sm:text-lg tracking-wider text-white uppercase glow-text-cyan">
               VINBANK CYBER ARENA
             </h1>
-            <span className="px-2.5 py-0.5 text-xs font-mono-tech font-extrabold tracking-widest text-[#00f5ff] bg-cyan-950/80 border border-cyan-400/50 rounded-sm">
-              TRON // 2077
+            <span className="px-2 py-0.5 text-[10px] font-mono-tech font-extrabold tracking-widest text-[#00f5ff] bg-cyan-950/80 border border-cyan-400/50 rounded-sm">
+              LAB 11
             </span>
           </div>
-          <div className="flex items-center gap-3 text-xs sm:text-sm font-mono-tech text-gray-300 mt-0.5">
-            <span className="flex items-center gap-1.5 text-[#ff5500] font-bold">
-              <span className="w-2 h-2 rounded-full bg-[#ff4500] shadow-[0_0_8px_#ff4500] animate-pulse"></span>
-              RED ADVERSARY (CLU)
-            </span>
-            <span className="text-gray-500 font-bold">VS</span>
-            <span className="flex items-center gap-1.5 text-[#00f5ff] font-bold">
-              <span className="w-2 h-2 rounded-full bg-[#00f5ff] shadow-[0_0_8px_#00f5ff] animate-pulse"></span>
-              BLUE GUARDIAN (TRON)
-            </span>
-          </div>
+          <p className="text-[11px] font-mono-tech text-gray-400">
+            Mô phỏng an ninh AI: Guardrails & Prompt Injection
+          </p>
         </div>
       </div>
 
-      {/* Center: TRON Grid Battle Scoreboard */}
-      <div className="flex items-center gap-6 sm:gap-10 bg-[#02050e] px-7 py-2.5 rounded-xl border border-white/15 shadow-[inset_0_0_20px_rgba(0,0,0,0.9)] tron-chamfer">
+      {/* Center: Bảng Theo Dõi Duy Nhất - Không lặp thông tin */}
+      <div className="flex items-center gap-6 sm:gap-8 bg-[#02050e] px-6 py-2 rounded-xl border border-white/15 shadow-[inset_0_0_20px_rgba(0,0,0,0.9)] tron-chamfer">
         
-        {/* RED SCORE (CLU Neon Orange-Red) */}
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <div className="text-xs font-mono-tech tracking-widest text-[#ff5500] font-extrabold uppercase flex items-center justify-end gap-1">
-              <Zap className="w-3.5 h-3.5 text-[#ff4500]" /> RED ATK
-            </div>
-            <div
-              ref={redScoreRef}
-              className="font-orbitron text-3xl sm:text-4xl font-black text-[#ff4500] glow-text-orange leading-none mt-1"
-            >
-              {redScore}
-            </div>
+        {/* Số lần Đột Kích Thành Công của Red */}
+        <div className="text-right">
+          <div className="text-[10px] font-mono-tech tracking-wider text-[#ff5500] font-bold uppercase flex items-center justify-end gap-1">
+            <Zap className="w-3 h-3 text-[#ff5500]" /> RED THẮNG
+          </div>
+          <div className="font-orbitron text-xl sm:text-2xl font-black text-[#ff4500] glow-text-orange leading-none mt-0.5">
+            {redBreaches}
           </div>
         </div>
 
-        {/* CENTER ROUND HUD */}
-        <div className="flex flex-col items-center px-6 py-0.5 border-x border-white/15 min-w-[130px]">
-          <div className="flex items-center gap-1.5 text-xs font-mono-tech tracking-widest text-[#ffd166] font-bold uppercase glow-text-gold">
+        {/* Tiến Độ 4 Lượt Đột Kích */}
+        <div className="flex flex-col items-center px-4 border-x border-white/15 min-w-[130px]">
+          <div className="flex items-center gap-1.5 text-xs font-mono-tech tracking-widest text-[#ffd166] font-extrabold uppercase glow-text-gold">
             <Radio className="w-3.5 h-3.5 animate-spin text-[#ffd166]" />
-            ROUND {String(Math.min(round, maxRounds)).padStart(2, '0')}/{String(maxRounds).padStart(2, '0')}
+            LƯỢT {currentAttempt} / {maxAttempts}
           </div>
           
-          {/* Segmented round progress bars */}
-          <div className="flex gap-1.5 mt-2">
-            {Array.from({ length: maxRounds }).map((_, idx) => (
+          {/* 4 Vạch Tiến Độ */}
+          <div className="flex gap-2 mt-1.5">
+            {Array.from({ length: maxAttempts }).map((_, idx) => (
               <span
                 key={idx}
-                className={`w-2 h-2.5 rounded-[1px] transition-all duration-300 ${
-                  idx < round ? 'bg-[#00f5ff] shadow-[0_0_8px_#00f5ff]' : 'bg-gray-800'
+                className={`w-6 h-2 rounded-[2px] transition-all duration-300 border ${
+                  idx < currentAttempt
+                    ? 'bg-[#ff4500] border-[#ff4500] shadow-[0_0_8px_#ff4500]'
+                    : 'bg-gray-900 border-white/10'
                 }`}
               />
             ))}
           </div>
-
-          <span className="text-[10px] font-mono-tech text-gray-300 mt-1.5 tracking-wider uppercase font-semibold">
-            {isBattling ? '⚡ LIGHT CYCLE DUEL...' : 'GRID ENGAGED'}
-          </span>
         </div>
 
-        {/* BLUE SCORE (Tron Cyan) */}
-        <div className="flex items-center gap-3">
-          <div className="text-left">
-            <div className="text-xs font-mono-tech tracking-widest text-[#00f5ff] font-extrabold uppercase flex items-center gap-1">
-              <Shield className="w-3.5 h-3.5 text-[#00f5ff]" /> BLUE DEF
-            </div>
-            <div
-              ref={blueScoreRef}
-              className="font-orbitron text-3xl sm:text-4xl font-black text-[#00f5ff] glow-text-cyan leading-none mt-1"
-            >
-              {blueScore}
-            </div>
+        {/* 5 Vạch Máu Vault Của Blue (DUY NHẤT TRÊN GIAO DIỆN) */}
+        <div className="text-left">
+          <div className="text-[10px] font-mono-tech tracking-wider text-[#00f5ff] font-bold uppercase flex items-center gap-1">
+            <Shield className="w-3 h-3 text-[#00f5ff]" /> MÁU VAULT
+          </div>
+          <div className="flex items-center gap-1 mt-1">
+            {Array.from({ length: maxBars }).map((_, idx) => {
+              const isAlive = idx < vaultBars;
+              return (
+                <div
+                  key={idx}
+                  className={`w-3.5 h-5 rounded-[2px] border transition-all duration-500 ${
+                    isAlive
+                      ? vaultBars > 2
+                        ? 'bg-[#00f5ff] border-cyan-300 shadow-[0_0_8px_#00f5ff]'
+                        : 'bg-[#ff4500] border-red-400 shadow-[0_0_8px_#ff4500] animate-pulse'
+                      : 'bg-gray-900/80 border-white/10 opacity-30'
+                  }`}
+                  title={`Vạch máu ${idx + 1}`}
+                />
+              );
+            })}
+            <span className="font-orbitron font-black text-sm text-[#00f5ff] ml-1 glow-text-cyan">
+              {vaultBars}/{maxBars}
+            </span>
           </div>
         </div>
 
       </div>
 
-      {/* Right Controls: Auto Battle, Reset & TRON Identity Disc (💡) */}
-      <div className="flex items-center gap-3.5">
+      {/* Right Controls: Nút Tiếp Tục Đột Kích (Random), Reset & TRON Identity Disc (💡) */}
+      <div className="flex items-center gap-3">
         
-        {/* Auto Battle Button */}
+        {/* Nút Đấu Tự Động / Tiếp Tục Lượt Tiếp Theo */}
         <button
-          onClick={onToggleAutoPlay}
-          className={`flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-chakra font-bold tracking-wider rounded-lg border-2 transition-all ${
-            isAutoPlaying
-              ? 'bg-[#ffd166]/20 text-[#ffd166] border-[#ffd166] shadow-[0_0_20px_rgba(255,209,102,0.5)] animate-pulse'
-              : 'bg-white/5 hover:bg-white/10 text-gray-200 border-white/20 hover:border-white/40'
+          onClick={onNextRound}
+          disabled={isBattling}
+          className={`flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-chakra font-bold tracking-wider rounded-lg border-2 transition-all cursor-pointer ${
+            isBattling
+              ? 'bg-cyan-950/60 text-cyan-300 border-cyan-400/50 opacity-80 cursor-not-allowed'
+              : currentAttempt > 0 && currentAttempt < maxAttempts
+              ? 'bg-gradient-to-r from-[#ffd166] to-[#ff9900] text-black border-white shadow-[0_0_20px_#ffd166] hover:scale-105 active:scale-95 animate-pulse'
+              : 'bg-white/10 hover:bg-white/20 text-gray-200 border-white/20 hover:border-white/40'
           }`}
-          title="Chạy giải đấu tự động 10 vòng"
+          title={
+            currentAttempt > 0 && currentAttempt < maxAttempts
+              ? `Thực hiện lần đột kích thứ ${currentAttempt + 1} (Random kỹ thuật)`
+              : 'Bắt đầu đột kích tự động'
+          }
         >
-          {isAutoPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-          <span>{isAutoPlaying ? 'TẠM DỪNG' : 'AUTO BATTLE'}</span>
+          {isBattling ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+              <span>ĐANG ĐẤU...</span>
+            </>
+          ) : currentAttempt > 0 && currentAttempt < maxAttempts ? (
+            <>
+              <FastForward className="w-4 h-4 fill-black text-black" />
+              <span>TIẾP TỤC (LƯỢT {currentAttempt + 1})</span>
+            </>
+          ) : (
+            <>
+              <Play className="w-4 h-4 fill-current text-cyan-400" />
+              <span>LƯỢT NGẪU NHIÊN</span>
+            </>
+          )}
         </button>
 
         {/* Reset Button */}
         <button
           onClick={onReset}
-          className="px-3.5 py-2 text-xs sm:text-sm font-chakra font-bold text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/20 hover:border-white/40 rounded-lg transition-all flex items-center gap-1.5"
-          title="Đặt lại toàn bộ trận đấu"
+          className="px-3 py-2 text-xs sm:text-sm font-chakra font-bold text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/20 hover:border-white/40 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+          title="Đặt lại trận đấu về ban đầu"
         >
           <RotateCcw className="w-4 h-4" />
-          <span>RESET</span>
+          <span>LÀM MỚI</span>
         </button>
 
-        {/* 💡 THE TRON IDENTITY DISC (Kevin Flynn's Gold Master Disc) 💡 */}
+        {/* 💡 THE TRON IDENTITY DISC 💡 */}
         <div className="relative group">
           <button
             onClick={onOpenSlides}
-            className="relative flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-[#ffd166]/25 to-[#ffaa00]/30 border-2 border-[#ffd166] text-[#ffd166] shadow-[0_0_25px_rgba(255,209,102,0.7)] hover:shadow-[0_0_40px_rgba(255,209,102,1)] transition-all cursor-pointer hover:scale-110 active:scale-95"
-            aria-label="Xem Slide Báo Cáo & Game Manual"
+            className="relative flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-[#ffd166]/25 to-[#ffaa00]/30 border-2 border-[#ffd166] text-[#ffd166] shadow-[0_0_25px_rgba(255,209,102,0.7)] hover:shadow-[0_0_40px_rgba(255,209,102,1)] transition-all cursor-pointer hover:scale-110 active:scale-95"
+            aria-label="Xem Slide Báo Cáo & Hướng Dẫn"
           >
-            {/* Concentric Rotating Disc Rings */}
             <span className="absolute inset-1 rounded-full border border-[#ffd166]/60 animate-disc-spin" />
-            <Lightbulb className="w-6 h-6 fill-[#ffd166] text-[#ffd166] filter drop-shadow-[0_0_12px_#ffd166]" />
+            <Lightbulb className="w-5 h-5 fill-[#ffd166] text-[#ffd166] filter drop-shadow-[0_0_10px_#ffd166]" />
           </button>
 
-          {/* TRON Tooltip */}
-          <div className="absolute right-0 top-14 hidden group-hover:flex flex-col items-end w-64 p-3 bg-[#060b18] border-2 border-[#ffd166]/70 text-[#ffd166] rounded-xl shadow-[0_0_25px_rgba(0,0,0,0.9)] pointer-events-none z-50">
+          <div className="absolute right-0 top-14 hidden group-hover:flex flex-col items-end w-60 p-2.5 bg-[#060b18] border-2 border-[#ffd166]/70 text-[#ffd166] rounded-xl shadow-[0_0_25px_rgba(0,0,0,0.9)] pointer-events-none z-50">
             <span className="font-orbitron font-extrabold text-xs flex items-center gap-1.5 text-[#ffd166] uppercase">
-              ⚡ IDENTITY DISC // INTEL
+              ⚡ HƯỚNG DẪN & SLIDE
             </span>
             <span className="text-xs font-chakra text-gray-200 text-right mt-1">
-              Bấm để mở Slide Thuyết Trình Lab 11 & Hướng dẫn Game
-            </span>
-            <span className="text-[10px] font-mono-tech text-amber-300 mt-1 uppercase">
-              [Phím: Space / Mũi tên]
+              Bấm để xem Slide Thuyết Trình Lab 11 & Luật Chơi
             </span>
           </div>
         </div>

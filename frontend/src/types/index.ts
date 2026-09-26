@@ -1,6 +1,15 @@
 export type AgentType = 'red_default' | 'red_advance' | 'blue_guard';
 
-export type GateStatus = 'idle' | 'checking' | 'passed' | 'blocked' | 'redacted';
+export type GateStatus = 'idle' | 'checking' | 'passed' | 'blocked' | 'redacted' | 'skipped';
+
+export type BattleStep =
+  | 'idle'
+  | 'waiting'            // Đang chờ backend/LLM thật phân tích (thời gian không cố định)
+  | 'step1_attack'       // Bước 1: Red chuẩn bị & phóng Prompt Injection (1s)
+  | 'step2_input_guard'  // Bước 2: Blue quét Rate Limit & Input Guardrail (1s)
+  | 'step3_llm'          // Bước 3: Mô hình LLM suy luận (1s)
+  | 'step4_output_guard' // Bước 4: Blue quét Output Guardrail & Che giấu PII/Secret (1s)
+  | 'step5_verdict';     // Bước 5: Phán quyết & Trừ vạch máu (1s)
 
 export interface GateInfo {
   id: number;
@@ -34,27 +43,43 @@ export interface RoundResult {
   prompt: string;
   gates: GateInfo[];
   response: string;
-  winner: 'RED' | 'BLUE' | 'DRAW';
-  pointsAwarded: number;
+  winner: 'RED' | 'BLUE';
   reason: string;
   leakedSecret?: string;
   redactedPii?: string[];
   latencyMs: number;
+  attackTechnique: string;
+  injectionTechnique?: string;
+  gateTriggered?: number;  // cửa đã chặn / che (1-5), không có = vượt qua tất cả
+  inputGuardStatus: 'BLOCKED' | 'PASSED';
+  outputGuardStatus: 'SAFE' | 'REDACTED' | 'LEAKED';
+  trace?: TraceStep[];     // thứ tự các bước backend THẬT đã chạy
+  error?: string;          // backend / LLM lỗi -> lượt không tính
+}
+
+/** Một bước trong luồng phân tích thật do backend trả về (POST /api/chat). */
+export interface TraceStep {
+  step: 'rate_limit' | 'input_guardrail' | 'llm' | 'output_guardrail' | 'egress';
+  status: 'passed' | 'blocked' | 'redacted' | 'skipped' | 'error';
+  detail: string;
+  ms: number;
 }
 
 export interface BattleState {
-  round: number;
-  maxRounds: number;
-  redScore: number;
-  blueScore: number;
-  vaultHp: number; // 0 - 100
+  currentAttempt: number; // 0 -> 4 lần đột kích
+  maxAttempts: number;    // 4
+  vaultBars: number;      // 0 -> 5 vạch máu
+  maxBars: number;        // 5
+  redBreaches: number;    // Số lần đột kích thành công
+  blueDefends: number;    // Số lần phòng thủ thành công
   isBattling: boolean;
   isAutoPlaying: boolean;
+  currentStep: BattleStep;
+  stepMessage: string;
   selectedAgent: AgentType;
   lastVerdict?: {
-    winner: 'RED' | 'BLUE' | 'DRAW';
+    winner: 'RED' | 'BLUE';
     title: string;
-    points: number;
     description: string;
   };
   history: RoundResult[];

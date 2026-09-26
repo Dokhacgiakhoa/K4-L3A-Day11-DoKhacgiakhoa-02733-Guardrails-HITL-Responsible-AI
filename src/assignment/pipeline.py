@@ -18,6 +18,7 @@ from __future__ import annotations
 import asyncio
 import json
 import re
+import time
 import uuid
 from pathlib import Path
 from types import SimpleNamespace
@@ -125,6 +126,27 @@ def _content(text: str, role: str = "user") -> types.Content:
     return types.Content(role=role, parts=[types.Part.from_text(text=text)])
 
 
+_PRE_LLM_STEPS = frozenset({"rate_limit", "input_guardrail"})
+
+
+def _pass_detail(step: str) -> str:
+    return {
+        "rate_limit": "Trong giới hạn request của cửa sổ",
+        "input_guardrail": "Không phát hiện injection, đúng chủ đề ngân hàng",
+    }.get(step, "Cho qua")
+
+
+def _block_detail(plugin) -> str:
+    if getattr(plugin, "name", "") == "rate_limiter":
+        return f"Vượt {plugin.max_requests} request / {plugin.window_seconds}s"
+    reason = getattr(plugin, "last_reason", None)
+    if reason == "injection":
+        return "Phát hiện prompt injection / dò secret"
+    if reason == "topic":
+        return "Ngoài phạm vi ngân hàng hoặc chủ đề bị cấm"
+    return "Bị chặn trước khi tới LLM"
+
+
 def _text_of(content) -> str:
     if content is None:
         return ""
@@ -182,23 +204,41 @@ class BluePipeline:
         user_msg = _content(text)
 
         response, blocked, layer, error = "", False, None, None
+        # Thứ tự thực tế các bước đã chạy (cho giao diện phát lại luồng phân tích).
+        trace: list[dict] = []
+
+        def _step(step: str, status: str, detail: str, started: float | None) -> None:
+            ms = round((time.perf_counter() - started) * 1000, 1) if started else 0.0
+            trace.append({"step": step, "status": status, "detail": detail, "ms": ms})
 
         # --- Lớp trước LLM: rate limit, input guardrail
         for plugin in self.plugins:
             cb = getattr(plugin, "on_user_message_callback", None)
             if cb is None:
                 continue
+            step = _LAYER_BY_PLUGIN.get(getattr(plugin, "name", ""), "input_guardrail")
+            t0 = time.perf_counter()
             result = await cb(invocation_context=ctx, user_message=user_msg)
             if result is not None:
                 response = _text_of(result)
                 blocked = True
-                layer = _LAYER_BY_PLUGIN.get(getattr(plugin, "name", ""), "input_guardrail")
+                layer = step
+                _step(step, "blocked", _block_detail(plugin), t0)
                 break
+            # BasePlugin cho mọi plugin một callback mặc định (no-op) -> chỉ ghi trace
+            # cho lớp thực sự làm việc trước LLM.
+            if step in _PRE_LLM_STEPS:
+                _step(step, "passed", _pass_detail(step), t0)
 
         # --- LLM (chỉ khi input đã qua)
-        if not blocked:
+        if blocked:
+            _step("llm", "skipped", "Không gọi LLM — request đã bị chặn trước đó", None)
+            _step("output_guardrail", "skipped", "Không có câu trả lời để quét", None)
+        else:
+            t0 = time.perf_counter()
             if not call_llm:
                 response = "(LLM call skipped — guardrail-only run)"
+                _step("llm", "skipped", "Chạy chế độ chỉ-guardrail", None)
             else:
                 try:
                     agent, runner = self._blue()
@@ -206,23 +246,36 @@ class BluePipeline:
                         chat_with_agent(agent, runner, text), timeout=llm_timeout
                     )
                     response = (response or "").strip()
+                    _step("llm", "passed", f"Blue LLM trả lời ({len(response)} ký tự)", t0)
                 except Exception as exc:  # noqa: BLE001 — ghi lại, không làm sập suite
                     error = f"{type(exc).__name__}: {exc}"
                     response = f"[LLM unavailable] {error}"
+                    layer = "error"
+                    _step("llm", "error", error[:200], t0)
 
             # --- Lớp sau LLM: output guardrail (chỉ khi có câu trả lời thật)
             if error is None and call_llm:
+                t0 = time.perf_counter()
                 llm_response = SimpleNamespace(content=_content(response, role="model"))
+                out_plugin = None
                 for plugin in self.plugins:
                     cb = getattr(plugin, "after_model_callback", None)
                     if cb is None:
                         continue
+                    out_plugin = plugin
                     out = await cb(callback_context=None, llm_response=llm_response)
                     if out is not None:
                         llm_response = out
                 final = _text_of(llm_response.content) or response
                 if final != response:  # output guardrail đã che / thay câu trả lời
                     response, blocked, layer = final, True, "output_guardrail"
+                    issues = getattr(out_plugin, "last_issues", None) or []
+                    _step("output_guardrail", "redacted",
+                          "Đã che [REDACTED]: " + (", ".join(issues) or "nội dung nhạy cảm"), t0)
+                else:
+                    _step("output_guardrail", "passed", "Không phát hiện secret / PII", t0)
+            elif error is not None:
+                _step("output_guardrail", "skipped", "LLM lỗi — không có câu trả lời để quét", None)
 
         self.audit.record_output(
             user_id=user_id, text=response, blocked=blocked, layer=layer,
@@ -237,6 +290,7 @@ class BluePipeline:
             "response": response,
             "response_preview": response[:300],
             "error": error,
+            "trace": trace,
         }
 
     def snapshot(self) -> dict:

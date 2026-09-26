@@ -12,19 +12,24 @@
 body {
   background-color: var(--tron-black);
   color: #f1f5f9;
-  font-family: 'Chakra Petch', sans-serif;
+  font-family: 'Be Vietnam Pro', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow: hidden;
   margin: 0;
   padding: 0;
-  font-size: 15px;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .font-orbitron {
-  font-family: 'Orbitron', monospace, sans-serif;
+  font-family: 'Be Vietnam Pro', 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: 0.04em;
+  font-weight: 800;
 }
 
 .font-chakra {
-  font-family: 'Chakra Petch', sans-serif;
+  font-family: 'Be Vietnam Pro', 'Plus Jakarta Sans', sans-serif;
+  font-weight: 600;
 }
 
 .font-mono-tech {
@@ -103,3 +108,84 @@ body {
   animation: cyber-glitch 0.2s infinite;
   filter: hue-rotate(90deg) contrast(1.4);
 }
+
+/* ========================================================
+   CUSTOM CYBER SCROLLBAR (SỬA LỖI THANH CUỘN TRẮNG THÔ KỆCH)
+   ======================================================== */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(2, 6, 18, 0.6);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 245, 255, 0.3);
+  border-radius: 4px;
+  border: 1px solid rgba(0, 245, 255, 0.4);
+  transition: all 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 245, 255, 0.7);
+  box-shadow: 0 0 10px #00f5ff;
+}
+
+::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0;
+  height: 0;
+}
+
+/* Scrollbar riêng cho Red Corner */
+.tron-panel-red::-webkit-scrollbar-thumb,
+.tron-panel-red *::-webkit-scrollbar-thumb {
+  background: rgba(255, 69, 0, 0.35);
+  border: 1px solid rgba(255, 69, 0, 0.5);
+}
+
+.tron-panel-red::-webkit-scrollbar-thumb:hover,
+.tron-panel-red *::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 69, 0, 0.8);
+  box-shadow: 0 0 10px #ff4500;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 245, 255, 0.35) rgba(2, 6, 18, 0.6);
+}
+
+.tron-panel-red {
+  scrollbar-color: rgba(255, 69, 0, 0.4) rgba(2, 6, 18, 0.6);
+}
+
+/* ========================================================
+   ARENA STADIUM SHOWDOWN BACKGROUND (CHUẨN ẢNH CHIẾU LỚP HỌC)
+   ======================================================== */
+.arena-stadium-bg {
+  background-color: #03050c;
+  background-image:
+    /* Dàn đèn rọi Spotlight bên trái (Cyan Stadium) */
+    radial-gradient(ellipse 65% 55% at 18% 5%, rgba(0, 245, 255, 0.28) 0%, transparent 65%),
+    /* Dàn đèn rọi Spotlight bên phải (Red/Orange Stadium) */
+    radial-gradient(ellipse 65% 55% at 82% 5%, rgba(255, 69, 0, 0.28) 0%, transparent 65%),
+    /* Ánh sáng va chạm trung tâm (Stage Flare VS) */
+    radial-gradient(ellipse 40% 30% at 50% 12%, rgba(255, 255, 255, 0.12) 0%, transparent 60%),
+    /* Sàn đấu Grid tương lai */
+    linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+}
+
+/* Khung Viền Mecha HUD Kim Loại */
+.mecha-hud-border {
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    0 0 20px rgba(0, 245, 255, 0.1),
+    inset 0 0 25px rgba(0, 0, 0, 0.8);
+}
+

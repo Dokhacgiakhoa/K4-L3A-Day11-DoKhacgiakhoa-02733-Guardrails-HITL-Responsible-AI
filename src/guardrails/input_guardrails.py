@@ -76,10 +76,11 @@ INJECTION_PATTERNS = [
     # --- prompt / config extraction
     r"system\s+(?:prompt|instructions?|message)",
     r"(?:reveal|show|print|display|repeat|output|leak|dump|tell me|give me|share|disclose|expose)\b.{0,40}\b(?:your|the|its)\s+(?:system\s+|initial\s+|hidden\s+|internal\s+|full\s+)?(?:instructions?|prompt|configuration|config|rules)",
-    r"translate\b.{0,40}\b(?:your|the)\s+(?:system\s+|internal\s+|entire\s+|complete\s+)?(?:instructions?|prompt|config(?:uration)?|notes)",
+    r"translate\b.{0,40}\b(?:your|the)\s+(?:(?:system|internal|entire|complete|full|hidden)\s+){0,3}(?:instructions?|prompt|config(?:uration)?|notes|settings)",
+    r"\b(?:internal|system|hidden)\s+(?:config(?:uration)?|settings|notes)\b.{0,60}\b(?:api[\s_-]?key|password|credentials?|secrets?|db\s*host|database)",
     # --- credential fishing
     r"(?:reveal|show|print|display|leak|dump|tell me|give me|share|disclose|expose|read out|send me)\b.{0,50}\b(?:passwords?|api[\s_-]?keys?|secrets?|credentials?|tokens?)",
-    r"\b(?:admin|root|system|internal|database|db)\s+(?:password|passwd|credentials?|host|server|connection|api[\s_-]?key)",
+    r"\b(?:admin|root|system|internal|database|db|master)\s+(?:secret\s+)?(?:password|passwd|credentials?|host|server|connection|api[\s_-]?key)",
     r"\b(?:api[\s_-]?key|internal notes?|secret)\b.{0,30}\b(?:is|=|:|are)\b",
     # --- Vietnamese (đã bỏ dấu)
     r"\bbo\s+qua\s+(?:moi\s+|tat\s+ca\s+)?(?:huong\s+dan|chi\s+dan|quy\s+tac)",
