@@ -1,5 +1,59 @@
 # Day 11 — Controlled Agent Security (2026)
 
+## Bài nộp
+
+| | |
+|---|---|
+| **Học viên** | Đỗ Khắc Gia Khoa |
+| **MSSV** | 2A202602733 |
+| **Lớp** | K4 — L3A |
+
+### Kết quả (từ `outputs/`, sinh bằng lệnh)
+
+| Checkpoint | Kết quả |
+|---|---|
+| CP2: Input + output guardrails | Injection (Unicode ẩn, EN/VI, ký tự chèn), topic filter, che PII/secret |
+| CP3: Pipeline (`results.json`) | Safe bị chặn nhầm **0/6** · Attack bị chặn **10/10** · Rate limit chặn **5/15** · Audit + metrics + egress |
+| CP4: Red team (`attack_results.json`) | Red (`gemini-3.5-flash`) leak **5/5** · Red Advance leak **0/5** |
+| Tự kiểm | `pytest tests` 61 passed · `scripts/grade.py` không lỗi kỹ thuật |
+
+### Cấu hình model
+
+- **Blue:** OpenRouter `liquid/lfm-2.5-2.6b:free`. Bản không `:free` trả 404 "No endpoints found" trên
+  OpenRouter nên đã đổi sang bản free của cùng model (`src/core/config.py`).
+- **Red / Red Advance:** Gemini `gemini-3.5-flash` (Google AI Studio). Chọn qua `RED_PROFILE=gemini` trong `.env`.
+
+### Chạy lại
+
+```bash
+python src/main.py --part 3     # outputs/results.json, audit_log.json, metrics.json
+python src/main.py --part 4     # outputs/attack_results.json (+ unsafe/guards)
+pytest tests -q
+python scripts/grade.py --submission-dir . --out outputs/grade_report.json
+```
+
+### Demo giao diện (tuỳ chọn, không chấm)
+
+```bash
+python src/api/server.py         # backend FastAPI, cổng 8000 (docs/API.md)
+npm --prefix frontend install    # lần đầu
+npm --prefix frontend run dev    # giao diện, http://localhost:3000
+```
+
+Giao diện gọi backend thật, phát lại các bước guardrail theo đúng thứ tự thực thi và dừng sau mỗi lượt.
+Chi tiết: `FRONTEND_SPEC_FOR_REVIEW.md`.
+
+### Phần bổ sung ngoài starter
+
+- `src/api/server.py`: API demo (`/api/chat` trả `trace` từng bước).
+- `scripts/check_red.py` + `RED_PROFILE`: đổi nhà cung cấp Red (gemini / openrouter / groq / github / openai).
+- `core/utils.chat_with_agent`: tự thử lại khi gặp lỗi tạm thời 429/503 (không thử lại khi hết quota theo ngày).
+- `tests/unit/`: test offline cho guardrail, egress, pipeline.
+
+---
+
+> Phần dưới là README gốc của starter.
+
 > 👤 **Hình thức:** bài tập **cá nhân** (1 người / 1 MSSV).  
 > 🎯 **Mục tiêu:** xây **Blue** (phòng thủ), rồi red-team **Red** + **Red Advance**.  
 > ✅ Làm theo **Checkpoint 1 → 5** trong [`CHECKPOINTS.md`](CHECKPOINTS.md) · nộp theo [`SUBMISSION.md`](SUBMISSION.md).
