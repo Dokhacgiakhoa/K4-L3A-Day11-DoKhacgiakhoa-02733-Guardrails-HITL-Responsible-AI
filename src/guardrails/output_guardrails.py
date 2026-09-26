@@ -43,6 +43,36 @@ PII_PATTERNS = {
 }
 
 
+# (3) Hình dạng câu trả lời mà câu trả lời ngân hàng bình thường không có.
+OBFUSCATION_PATTERNS = {
+    # ≥7 ký tự đơn phân tách bằng , ; | (vd. ["s", "k", "-", "v", ...])
+    "spelled_out": r"(?:[\"'`]?[A-Za-z0-9-][\"'`]?\s*[,;|]\s*){6,}[\"'`]?[A-Za-z0-9-][\"'`]?",
+    # ≥8 ký tự đơn cách nhau bằng khoảng trắng (vd. "s k - v i n b a n k")
+    "spaced_out": r"(?<!\S)(?:[A-Za-z0-9-]\s+){7,}[A-Za-z0-9-](?!\S)",
+    # Chuỗi base64 / hex dài có cả chữ lẫn số (số tài khoản thuần số không bị bắt)
+    "encoded_blob": r"\b(?=[A-Za-z0-9+/]*\d)(?=[A-Za-z0-9+/]*[A-Za-z])[A-Za-z0-9+/]{20,}={0,2}(?![A-Za-z0-9+/=])",
+}
+
+# (2) Mảnh đặc trưng của secret demo, dạng chỉ còn chữ/số (lowercase).
+# Chọn tay thay vì cắt tự động: tránh các mảnh chỉ gồm "vinbank" + chữ thường gặp
+# (vd. "VinBank's security" -> "vinbankssecurity" không được khớp).
+SECRET_FRAGMENTS = (
+    "admin123",
+    "skvinbank", "banksecret", "secret2024", "vinbanksecr",
+    "dbvinbank", "vinbankinternal", "bankinternal", "internal5432",
+)
+
+
+def secret_fragment_found(text: str) -> str | None:
+    """Trả mảnh secret tìm thấy (kể cả khi viết ngược), hoặc None."""
+    squashed = re.sub(r"[^a-z0-9]", "", (text or "").lower())
+    for candidate in (squashed, squashed[::-1]):
+        for frag in SECRET_FRAGMENTS:
+            if frag in candidate:
+                return frag
+    return None
+
+
 def content_filter(response: str) -> dict:
     """Filter response for PII, secrets, and harmful content.
 
@@ -62,6 +92,20 @@ def content_filter(response: str) -> dict:
         if matches:
             issues.append(f"{name}: {len(matches)} found")
             redacted = re.sub(pattern, "[REDACTED]", redacted, flags=re.IGNORECASE)
+
+    # (3) Hình dạng né regex: secret bị tách từng ký tự / mã hoá base64-hex.
+    for name, pattern in OBFUSCATION_PATTERNS.items():
+        matches = re.findall(pattern, redacted)
+        if matches:
+            issues.append(f"{name}: {len(matches)} found")
+            redacted = re.sub(pattern, "[REDACTED]", redacted)
+
+    # (2) Mảnh secret sau khi bỏ mọi ký tự không phải chữ/số (bắt cả bản chép thiếu,
+    # viết ngược, chèn dấu). Không định vị được vị trí -> che toàn bộ câu trả lời.
+    fragment = secret_fragment_found(redacted)
+    if fragment:
+        issues.append(f"secret_fragment: '{fragment}'")
+        redacted = "[REDACTED] Câu trả lời đã bị chặn vì chứa thông tin nội bộ."
 
     return {
         "safe": len(issues) == 0,

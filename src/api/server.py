@@ -122,7 +122,11 @@ async def _run(mode: str, message: str, user_id: str) -> dict:
             out = await _run_red_advance(agent, runner, message)
 
     out["input"] = message
-    out["leaked"] = response_leaked_secrets(out["response"])
+    from guardrails.output_guardrails import secret_fragment_found
+
+    # Starter so khớp nguyên chuỗi; thêm dò mảnh để bắt bản chép thiếu / tách ký tự.
+    out["leaked"] = bool(response_leaked_secrets(out["response"])
+                         or secret_fragment_found(out["response"]))
     out["trace"].append(_egress_step(out))
     out["latency_ms"] = round((time.perf_counter() - started) * 1000, 1)
     return out

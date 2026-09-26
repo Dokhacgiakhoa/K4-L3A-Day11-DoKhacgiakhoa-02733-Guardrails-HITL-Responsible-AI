@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-26T09:42:06.699843+00:00",
+  "generated_at": "2026-09-26T10:29:48.324216+00:00",
   "submission_dir": "D:\\Github\\K4-L3A-Day11-DoKhacgiakhoa-02733-Guardrails-HITL-Responsible-AI",
   "technical_failure": false,
   "packaging": {
@@ -47,7 +47,7 @@
   },
   "public_tests": {
     "returncode": 0,
-    "stdout": "..........                                                               [100%]\n10 passed in 1.61s\n",
+    "stdout": "..........                                                               [100%]\n10 passed in 0.95s\n",
     "stderr": "",
     "technical_failure": false
   },

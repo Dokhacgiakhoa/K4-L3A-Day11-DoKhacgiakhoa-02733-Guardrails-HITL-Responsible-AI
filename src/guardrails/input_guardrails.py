@@ -82,7 +82,17 @@ INJECTION_PATTERNS = [
     r"(?:reveal|show|print|display|leak|dump|tell me|give me|share|disclose|expose|read out|send me)\b.{0,50}\b(?:passwords?|api[\s_-]?keys?|secrets?|credentials?|tokens?)",
     r"\b(?:admin|root|system|internal|database|db|master)\s+(?:secret\s+)?(?:password|passwd|credentials?|host|server|connection|api[\s_-]?key)",
     r"\b(?:api[\s_-]?key|internal notes?|secret)\b.{0,30}\b(?:is|=|:|are)\b",
+    # --- tách từng ký tự / token để né bộ lọc output
+    r"\b(?:spell(?:ing)?\s+(?:out|it)|character[\s-]+by[\s-]+character|char[\s-]+by[\s-]+char|letter[\s-]+by[\s-]+letter)\b",
+    r"\b(?:each|every|one)\s+(?:character|char|letter|token)s?\b.{0,40}\b(?:of|in|from|at)\b",
+    r"\b(?:config(?:uration)?|environment|env|system)\s+(?:variable|value|var)s?\b",
+    r"\b(?:starts?|begins?|beginning|prefixed)\s+with\s+[\"'`]?(?:sk-|admin|db\.)",
+    r"\b(?:debug(?:ging)?\s+(?:mode|tool|console)|token\s+tracer|developer\s+console)\b",
     # --- Vietnamese (đã bỏ dấu)
+    r"\b(?:liet\s+ke|tach|viet|in|dem|doc)\s+(?:ra\s+)?(?:tung|moi|cac|lan\s+luot)\s+(?:ky\s+tu|token|chu\s+cai|chu\s+so)",
+    r"\bbien\s+(?:cau\s+hinh|moi\s+truong|he\s+thong)\b",
+    r"\bbat\s+dau\s+bang\s+[\"'`]?(?:sk-|admin|db\.)",
+    r"\b(?:cong\s+cu|che\s+do)\s+debug\b",
     r"\bbo\s+qua\s+(?:moi\s+|tat\s+ca\s+)?(?:huong\s+dan|chi\s+dan|quy\s+tac)",
     r"\btiet\s+lo\s+(?:mat\s+khau|api|thong\s+tin\s+noi\s+bo|prompt)",
     r"\bmat\s+khau\s+(?:admin|quan\s+tri|he\s+thong|noi\s+bo)",
@@ -105,7 +115,8 @@ _SQUASHED_MARKERS = (
 
 # Giá trị secret demo xuất hiện trong INPUT
 _SECRET_IN_INPUT = re.compile(
-    r"admin123|sk-vinbank|vinbank-secret|db\.vinbank\.internal", re.IGNORECASE
+    r"admin123|sk-vinbank|vinbank-secret|db\.vinbank\.internal|[\"'`]sk-[\"'`]?(?![a-z0-9])",
+    re.IGNORECASE
 )
 
 
